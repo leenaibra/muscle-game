@@ -1,0 +1,741 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>تحدي العضلات</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=Readex+Pro:wght@500;700&family=Newsreader:ital,opsz,wght@1,6..72,500&display=swap">
+<style>
+/* التصميم: لوحة تشريح سريرية — المجسّم في جهة، والسؤال والبطاقة في الجهة الثانية */
+:root {
+  --bg: #edf1f1;          /* خلفية رمادية مائلة للأزرق */
+  --panel: #f8fafa;
+  --fg: #1c2a2d;          /* لون النص */
+  --muted: #5c6d70;
+  --line: #d3dcdc;
+  --skin: #e6d5c8;        /* لون الجلد في المجسّم */
+  --skin-shade: #d6c1b2;
+  --muscle: #c46a66;      /* لون العضلة */
+  --muscle-hi: #a8484c;   /* العضلة عند المرور عليها */
+  --muscle-line: #8f3d40;
+  --accent: #1f6f78;      /* لون الأزرار */
+  --accent-ink: #ffffff;
+  --ok: #2f8a63;          /* إجابة صحيحة */
+  --bad: #d08a2e;         /* إجابة خاطئة */
+  --fiber: rgba(90, 25, 30, .38); /* لون خطوط الألياف */
+  --hair: #4a3328;        /* لون الشعر */
+  --f-display: "Readex Pro", "IBM Plex Sans Arabic", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans Arabic", system-ui, sans-serif;
+  --f-latin: "Newsreader", Georgia, "Times New Roman", serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11181a; --panel: #182225; --fg: #e4ecec; --muted: #93a5a8; --line: #2a3a3e;
+    --skin: #3b3431; --skin-shade: #4a403b; --muscle: #b25a5c; --muscle-hi: #d0767a; --muscle-line: #6e2d31;
+    --accent: #55b4bd; --accent-ink: #0d1517; --ok: #4cbf8c; --bad: #e5a24b;
+    --fiber: rgba(20, 5, 8, .45); --hair: #241a16;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11181a; --panel: #182225; --fg: #e4ecec; --muted: #93a5a8; --line: #2a3a3e;
+  --skin: #3b3431; --skin-shade: #4a403b; --muscle: #b25a5c; --muscle-hi: #d0767a; --muscle-line: #6e2d31;
+  --accent: #55b4bd; --accent-ink: #0d1517; --ok: #4cbf8c; --bad: #e5a24b;
+  --fiber: rgba(20, 5, 8, .45); --hair: #241a16;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--f-body); font-size: 16px; line-height: 1.6;
+  padding-inline: 16px; padding-block: 20px 32px;
+}
+.app {
+  max-width: 1040px; margin-inline: auto;
+  display: grid; gap: 20px 32px;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
+  grid-template-areas: "top top" "q fig" "info fig";
+  grid-template-rows: auto auto 1fr;
+  align-items: start;
+}
+.top { grid-area: top; display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 24px; border-bottom: 1px solid var(--line); padding-bottom: 16px; }
+.top h1 { font-family: var(--f-display); font-weight: 700; font-size: 1.9rem; margin: 0; line-height: 1.2; }
+.top p { margin: 2px 0 0; color: var(--muted); font-size: .9rem; }
+
+/* أزرار أنماط اللعب */
+.modes { display: flex; flex-wrap: wrap; gap: 6px; }
+.modes button {
+  font: 500 .92rem var(--f-body); color: var(--fg); background: transparent;
+  border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; cursor: pointer;
+}
+.modes button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* منطقة السؤال */
+.q { grid-area: q; min-width: 0; }
+.meta { display: flex; flex-wrap: wrap; gap: 16px; color: var(--muted); font-size: .9rem; font-variant-numeric: tabular-nums; }
+.meta b { color: var(--fg); font-weight: 600; }
+.bar { height: 4px; background: var(--line); border-radius: 2px; margin-block: 10px 22px; overflow: hidden; }
+.bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .3s; }
+.kicker { margin: 0; color: var(--muted); font-size: 1rem; }
+.prompt { margin: 4px 0 0; font-size: clamp(1.8rem, 5vw, 2.8rem); line-height: 1.2; text-wrap: balance; font-family: var(--f-display); font-weight: 700; }
+.prompt.latin { font-family: var(--f-latin); font-style: italic; font-weight: 500; direction: ltr; text-align: right; }
+.sub { margin: 6px 0 0; color: var(--muted); font-size: 1.05rem; }
+.result {
+  margin-top: 20px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px;
+  padding: 12px 16px; border-radius: 10px; background: var(--panel); border: 1px solid var(--line);
+}
+.result.good { border-color: var(--ok); }
+.result.miss { border-color: var(--bad); }
+.result span { flex: 1 1 200px; min-width: 0; font-weight: 500; }
+.btn {
+  font: 600 1rem var(--f-body); background: var(--accent); color: var(--accent-ink);
+  border: 0; border-radius: 8px; padding: 8px 20px; cursor: pointer;
+}
+
+/* المجسّم */
+.fig { grid-area: fig; margin: 0; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); }
+.fig svg { display: block; width: 100%; max-width: 100%; height: auto; max-height: 82vh; margin-inline: auto; }
+.sex { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px; margin-bottom: 10px; }
+.sex .sep { width: 1px; height: 18px; background: var(--line); margin-inline: 6px; }
+.sex button {
+  font: 500 .88rem var(--f-body); color: var(--muted); background: transparent;
+  border: 1px solid var(--line); border-radius: 8px; padding: 4px 12px; cursor: pointer;
+}
+.sex button[aria-pressed="true"] { color: var(--fg); border-color: var(--fg); background: var(--panel); }
+.fig figcaption { text-align: center; color: var(--muted); font-size: .8rem; margin-top: 6px; }
+.skin { fill: var(--skin); }
+.shade { fill: var(--skin-shade); pointer-events: none; }
+.decor { fill: none; stroke: var(--muscle-line); stroke-width: 1; opacity: .7; pointer-events: none; }
+.hair { fill: var(--hair); }
+.fiber-line { stroke: var(--fiber); stroke-width: .7; }
+.tex, .gloss { pointer-events: none; }
+.m { fill: var(--muscle); stroke: var(--muscle-line); stroke-width: .8; cursor: pointer; transition: fill .15s; }
+.m.hov { fill: var(--muscle-hi); }
+.m.sel { fill: var(--accent); }
+.m.ok { fill: var(--ok); }
+.m.bad { fill: var(--bad); }
+.m.reveal { fill: var(--ok); animation: pulse .9s ease-in-out 3; }
+.m:focus-visible { outline: none; stroke: var(--fg); stroke-width: 2.5; }
+@keyframes pulse { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .m.reveal { animation: none; } .bar i { transition: none; } }
+
+/* بطاقة معلومات العضلة */
+.info { grid-area: info; align-self: start; min-width: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; }
+.info h3 { margin: 0; font-family: var(--f-latin); font-style: italic; font-weight: 500; font-size: 1.6rem; direction: ltr; text-align: right; line-height: 1.2; }
+.info .ar { margin: 2px 0 14px; font-family: var(--f-display); font-weight: 500; font-size: 1.1rem; }
+.info dl { margin: 0; display: grid; gap: 10px; }
+.info dt { font-size: .75rem; letter-spacing: .04em; color: var(--muted); }
+.info dd { margin: 0; }
+.info .en { color: var(--muted); font-size: .9rem; direction: ltr; unicode-bidi: isolate; }
+.info .hint { margin: 0; color: var(--muted); }
+.note { grid-area: auto; color: var(--muted); font-size: .8rem; margin: 0; }
+
+@media (max-width: 760px) {
+  .app { grid-template-columns: minmax(0, 1fr); grid-template-areas: "top" "q" "fig" "info"; grid-template-rows: auto; }
+  .fig { position: static; }
+  .fig svg { max-height: 70vh; }
+}
+</style>
+</head>
+<body>
+
+<div class="app" dir="rtl" lang="ar">
+  <header class="top">
+    <div>
+      <h1>تحدي العضلات</h1>
+      <p>26 عضلة من الأمام والخلف</p>
+    </div>
+    <nav class="modes" aria-label="نمط اللعب">
+      <button type="button" data-mode="name" aria-pressed="true">الاسم</button>
+      <button type="button" data-mode="action" aria-pressed="false">الوظيفة</button>
+      <button type="button" data-mode="nerve" aria-pressed="false">العصب</button>
+      <button type="button" data-mode="explore" aria-pressed="false">تصفّح</button>
+    </nav>
+  </header>
+
+  <section class="q" aria-live="polite">
+    <div class="meta" id="meta">
+      <span id="progress"></span>
+      <span>النقاط <b id="score">0</b></span>
+      <span>متتالية <b id="streak">0</b></span>
+      <span>أفضل نتيجة <b id="best">0</b></span>
+    </div>
+    <div class="bar"><i id="barFill"></i></div>
+    <p class="kicker" id="kicker"></p>
+    <h2 class="prompt" id="prompt"></h2>
+    <p class="sub" id="sub"></p>
+    <div class="result" id="result" hidden>
+      <span id="resultText"></span>
+      <button type="button" class="btn" id="nextBtn">التالي</button>
+    </div>
+  </section>
+
+  <figure class="fig">
+    <div class="sex" role="group" aria-label="نوع الجسم والمنظر">
+      <button type="button" data-body="female" aria-pressed="true">جسم أنثى</button>
+      <button type="button" data-body="male" aria-pressed="false">جسم ذكر</button>
+      <span class="sep" aria-hidden="true"></span>
+      <button type="button" data-view="front" aria-pressed="true">من الأمام</button>
+      <button type="button" data-view="back" aria-pressed="false">من الخلف</button>
+    </div>
+    <!-- رسمة الجسم: نرسم النصف الأيسر من الشاشة فقط، والجافاسكربت ينسخه ويعكسه -->
+    <svg id="body" viewBox="60 4 280 818" role="img" aria-label="مجسّم عضلات الجسم">
+      <defs id="defs">
+        <!-- تظليل: لمعة فوق وظل تحت -->
+        <linearGradient id="gloss" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#fff" stop-opacity=".28"/>
+          <stop offset=".45" stop-color="#fff" stop-opacity="0"/>
+          <stop offset="1" stop-color="#000" stop-opacity=".25"/>
+        </linearGradient>
+      </defs>
+      <g class="view" data-view="front">
+      <g id="half">
+        <path class="skin outline" d="M201,108 L183,112 L181,145 C162,155 134,153 118,166 C102,175 98,195 100,215 L94,320 L82,450 C76,470 78,505 92,512 C102,515 108,500 106,470 L114,450 L128,330 L136,230 L141,232 C144,280 156,330 156,362 C156,395 132,420 128,455 C126,500 138,580 148,640 L154,700 C156,740 160,770 162,790 L152,812 L192,812 L188,790 C192,740 196,700 192,660 L194,640 L201,475 Z"/>
+        <ellipse class="shade" cx="178" cy="648" rx="9" ry="11"/>
+
+        <!-- كل عضلة لها data-m = رقم تعريفها في قائمة MUSCLES -->
+        <path class="m" data-m="trapezius" d="M181,128 C166,145 142,151 122,163 L129,169 C150,161 168,158 183,151 Z"/>
+        <path class="m" data-m="scm" d="M181,112 C186,126 192,140 198,153 L191,158 C185,145 179,131 177,116 Z"/>
+        <path class="m" data-m="pec" d="M134,172 C150,169 180,167 198,172 L198,236 C180,246 155,241 137,229 C132,214 129,200 127,192 Z"/>
+        <path class="m" transform="translate(5 0)" data-m="serratus" d="M138,240 L154,248 L141,255 L156,265 L143,272 L157,283 L145,292 C142,275 140,258 138,240 Z"/>
+        <path class="m" data-m="oblique" d="M150,298 L161,291 L172,302 C175,332 175,362 173,396 C166,412 150,424 136,436 C142,415 152,392 156,366 C156,345 152,320 150,298 Z"/>
+        <path class="m" data-m="rectusAbd" d="M175,244 L198,244 L198,436 L189,436 C183,410 176,330 175,244 Z"/>
+        <path class="m" transform="translate(6 0)" data-m="biceps" d="M109,238 C119,234 127,246 126,266 C125,290 119,306 113,320 C106,306 100,286 100,266 C100,252 103,242 109,238 Z"/>
+        <path class="m" transform="translate(6 0)" data-m="deltoid" d="M118,165 C100,172 92,192 95,215 L101,252 C110,240 119,224 125,204 C128,190 131,178 136,170 C130,166 124,164 118,165 Z"/>
+        <path class="m" transform="translate(6 0)" data-m="brachiorad" d="M94,292 C91,305 89,322 88,338 C86,372 82,410 80,446 L88,447 C92,410 98,372 103,342 C102,320 99,302 94,292 Z"/>
+        <path class="m" data-m="adductor" d="M184,478 L199,481 L197,545 C193,553 189,556 185,548 C186,530 185,505 182,490 Z"/>
+        <path class="m" data-m="vastusLat" d="M139,470 C149,482 156,520 159,570 C161,600 163,620 164,634 L152,634 C148,600 142,540 138,482 Z"/>
+        <path class="m" data-m="rectusFem" d="M158,458 C168,452 174,470 174,500 C174,560 170,610 168,628 C162,612 154,560 152,505 C151,480 152,462 158,458 Z"/>
+        <path class="m" data-m="vastusMed" d="M181,565 C189,575 191,600 188,626 C182,636 174,632 170,622 C173,600 176,582 181,565 Z"/>
+        <path class="m" data-m="sartorius" d="M138,442 L147,440 C162,468 180,495 190,530 C194,560 195,600 194,630 L188,631 C189,600 188,565 182,535 C172,500 154,472 138,442 Z"/>
+        <path class="m" data-m="tibialisAnt" d="M160,666 C168,662 174,670 174,690 C173,730 172,762 177,792 L170,793 C166,760 160,720 158,690 C157,678 157,669 160,666 Z"/>
+        <path class="m" data-m="gastroc" d="M183,666 C193,680 196,708 192,736 L186,736 C186,712 184,690 181,672 Z"/>
+
+        <!-- خطوط زينة: التقاطعات الوترية في المستقيمة البطنية -->
+        <path class="decor" d="M176,290 L198,290 M177,335 L198,335 M180,382 L198,382"/>
+      </g>
+      <ellipse class="skin" cx="200" cy="68" rx="34" ry="44"/>
+      <!-- الشعر: كعكة + غرّة -->
+      <circle class="hair bun" cx="200" cy="22" r="15"/>
+      <path class="hair" id="hairCap" d="M166,72 C162,34 180,24 200,24 C220,24 238,34 234,72 C229,52 216,42 200,42 C184,42 171,52 166,72 Z"/>
+      </g>
+
+      <!-- ===== المنظر الخلفي ===== -->
+      <g class="view" data-view="back" style="display:none">
+      <g id="halfBack">
+        <path class="skin outline" d="M201,108 L183,112 L181,145 C162,155 134,153 118,166 C102,175 98,195 100,215 L94,320 L82,450 C76,470 78,505 92,512 C102,515 108,500 106,470 L114,450 L128,330 L136,230 L141,232 C144,280 156,330 156,362 C156,395 132,420 128,455 C126,500 138,580 148,640 L154,700 C156,740 160,770 162,790 L152,812 L192,812 L188,790 C192,740 196,700 192,660 L194,640 L201,475 Z"/>
+
+        <path class="m" data-m="trapezius" d="M201,110 L186,114 C184,138 168,152 118,163 C128,170 140,176 150,190 C165,215 180,250 201,302 Z"/>
+        <path class="m" data-m="lats" d="M201,282 L201,395 C186,398 166,402 154,398 C153,370 151,330 147,292 C145,266 142,248 138,240 C150,252 166,262 180,268 C190,272 196,277 201,282 Z"/>
+        <path class="m" transform="translate(4 0)" data-m="infraspinatus" d="M170,190 L134,180 C130,200 135,222 145,240 L165,250 C170,230 172,210 170,190 Z"/>
+        <path class="m" transform="translate(4 0)" data-m="teresMajor" d="M166,250 L160,258 C150,252 138,244 128,234 L131,226 C142,234 154,242 166,250 Z"/>
+        <path class="m" transform="translate(6 0)" data-m="triceps" d="M108,240 C118,236 126,246 126,268 C125,292 120,308 113,322 C106,308 100,288 100,266 C100,252 103,243 108,240 Z"/>
+        <path class="m" transform="translate(6 0)" data-m="deltoid" d="M118,165 C100,172 92,192 95,215 L101,252 C110,238 118,222 122,205 C126,190 128,178 130,170 C126,166 122,164 118,165 Z"/>
+        <path class="m" transform="translate(6 0)" data-m="extDig" d="M100,335 C108,330 116,340 114,360 C110,395 102,425 96,445 L90,445 C92,420 94,380 96,350 C96,342 97,337 100,335 Z"/>
+        <path class="m" data-m="gluteMed" d="M140,436 C138,415 146,400 165,398 C180,398 192,405 196,415 C180,418 160,424 140,436 Z"/>
+        <path class="m" data-m="gluteMax" d="M201,420 L201,500 C190,505 168,506 150,496 C142,480 138,460 140,440 C155,430 180,420 201,420 Z"/>
+        <path class="m" data-m="bicepsFem" d="M150,505 C160,505 168,520 168,550 C168,590 164,620 160,640 L152,640 C150,610 146,560 146,530 C146,515 147,507 150,505 Z"/>
+        <path class="m" data-m="semitend" d="M172,505 C185,500 194,510 194,540 C194,580 190,615 186,640 L178,640 C176,610 172,570 170,540 C169,520 169,508 172,505 Z"/>
+        <path class="m" data-m="soleus" d="M156,735 C160,745 170,748 182,742 C186,760 184,780 180,790 L168,790 C164,775 158,755 156,735 Z"/>
+        <path class="m" data-m="gastroc" d="M156,655 C166,650 176,660 176,690 C176,715 170,730 162,735 C156,720 154,690 154,670 Z M178,658 C188,652 196,665 194,695 C192,720 186,735 178,738 C176,715 176,690 176,670 Z"/>
+
+        <!-- زينة: شوكة لوح الكتف -->
+        <path class="decor" transform="translate(4 0)" d="M172,186 L130,176"/>
+      </g>
+      <ellipse class="skin" cx="200" cy="68" rx="34" ry="44"/>
+      <circle class="hair bun" cx="200" cy="22" r="15"/>
+      <path class="hair" id="hairBack" d="M166,72 C162,30 182,24 200,24 C218,24 238,30 234,72 C236,95 226,110 200,112 C174,110 164,95 166,72 Z"/>
+      </g>
+    </svg>
+    <figcaption id="caption">منظر أمامي: يمين الجسم يظهر على يسار الشاشة</figcaption>
+  </figure>
+
+  <section class="info" id="info" aria-live="polite"></section>
+</div>
+
+<script>
+/* =========================================================
+   ١) البيانات: الأعصاب والعضلات
+   تقدرين تضيفين عضلة جديدة بإضافة عنصر هنا + شكل في الرسمة بنفس id
+   ========================================================= */
+const NERVES = {
+  accessory:        { ar: "العصب الإضافي (القحفي الحادي عشر)", en: "Accessory n. (CN XI)" },
+  axillary:         { ar: "العصب الإبطي",               en: "Axillary n. (C5–C6)" },
+  pectoral:         { ar: "العصبان الصدريان الإنسي والوحشي", en: "Medial & lateral pectoral nn. (C5–T1)" },
+  longThoracic:     { ar: "العصب الصدري الطويل",         en: "Long thoracic n. (C5–C7)" },
+  musculocutaneous: { ar: "العصب العضلي الجلدي",         en: "Musculocutaneous n. (C5–C7)" },
+  radial:           { ar: "العصب الكعبري",               en: "Radial n. (C5–T1)" },
+  pin:              { ar: "العصب بين العظمي الخلفي (فرع من الكعبري)", en: "Posterior interosseous n. (C7–C8)" },
+  suprascapular:    { ar: "العصب فوق الكتف",             en: "Suprascapular n. (C5–C6)" },
+  lowerSubscapular: { ar: "العصب تحت الكتف السفلي",       en: "Lower subscapular n. (C5–C6)" },
+  thoracodorsal:    { ar: "العصب الصدري الظهري",          en: "Thoracodorsal n. (C6–C8)" },
+  superiorGluteal:  { ar: "العصب الألوي العلوي",          en: "Superior gluteal n. (L4–S1)" },
+  inferiorGluteal:  { ar: "العصب الألوي السفلي",          en: "Inferior gluteal n. (L5–S2)" },
+  sciatic:          { ar: "العصب الوركي",                en: "Sciatic n. (L5–S2)" },
+  thoracoabdominal: { ar: "الأعصاب الصدرية البطنية",      en: "Thoracoabdominal nn. (T7–T12)" },
+  femoral:          { ar: "العصب الفخذي",                en: "Femoral n. (L2–L4)" },
+  obturator:        { ar: "العصب السدادي",               en: "Obturator n. (L2–L4)" },
+  deepFibular:      { ar: "العصب الشظوي العميق",          en: "Deep fibular n. (L4–L5)" },
+  tibial:           { ar: "العصب الظنبوبي",              en: "Tibial n. (S1–S2)" }
+};
+
+const MUSCLES = [
+  { id: "scm", latin: "Sternocleidomastoid", ar: "القصية الترقوية الخشائية", nerve: "accessory",
+    action: "ثني الرقبة، وتدوير الرأس للجهة المعاكسة",
+    clue: "تدوير الرأس للجهة المعاكسة" },
+  { id: "trapezius", view: "both", latin: "Trapezius", ar: "شبه المنحرفة", nerve: "accessory",
+    action: "العلوية ترفع لوح الكتف، والوسطى تقرّبه للعمود الفقري (Retraction)، والسفلية تخفضه",
+    clue: "رفع الكتفين لفوق (هزّ الكتف)" },
+  { id: "deltoid", view: "both", latin: "Deltoid", ar: "الدالية", nerve: "axillary",
+    action: "تبعيد الذراع عند الكتف (Abduction)، والألياف الأمامية تثني والخلفية تمدّ",
+    clue: "رفع الذراع جانبيًا (Shoulder abduction)" },
+  { id: "pec", latin: "Pectoralis major", ar: "الصدرية الكبرى", nerve: "pectoral",
+    action: "تقريب الذراع وتدويره للداخل (Adduction & medial rotation)",
+    clue: "تقريب الذراع وتدويره للداخل" },
+  { id: "serratus", latin: "Serratus anterior", ar: "المنشارية الأمامية", nerve: "longThoracic",
+    action: "سحب لوح الكتف للأمام وتدويره للأعلى (Protraction)",
+    clue: "سحب لوح الكتف للأمام (Protraction)، وضعفها يسبب Winged scapula" },
+  { id: "biceps", latin: "Biceps brachii", ar: "ذات الرأسين العضدية", nerve: "musculocutaneous",
+    action: "ثني الكوع، وقلب الساعد للأعلى (Supination)",
+    clue: "ثني الكوع + Supination للساعد" },
+  { id: "brachiorad", latin: "Brachioradialis", ar: "العضدية الكعبرية", nerve: "radial",
+    action: "ثني الكوع والساعد في الوضع المتوسط (Mid-prone)",
+    clue: "ثني الكوع والساعد في الوضع المتوسط (مثل مسكة الكوب)" },
+  { id: "rectusAbd", latin: "Rectus abdominis", ar: "المستقيمة البطنية", nerve: "thoracoabdominal",
+    action: "ثني الجذع للأمام",
+    clue: "ثني الجذع للأمام (حركة الـ Crunch)" },
+  { id: "oblique", latin: "External oblique", ar: "المائلة الخارجية", nerve: "thoracoabdominal",
+    action: "تدوير الجذع للجهة المعاكسة، وثنيه جانبيًا",
+    clue: "تدوير الجذع للجهة المعاكسة" },
+  { id: "rectusFem", latin: "Rectus femoris", ar: "المستقيمة الفخذية", nerve: "femoral",
+    action: "بسط الركبة وثني الورك",
+    clue: "بسط الركبة وثني الورك معًا (رأس الرباعية اللي يعبر مفصلين)" },
+  { id: "vastusLat", latin: "Vastus lateralis", ar: "المتسعة الوحشية", nerve: "femoral",
+    action: "بسط الركبة",
+    clue: "بسط الركبة: أكبر رؤوس الرباعية، على الجهة الخارجية للفخذ" },
+  { id: "vastusMed", latin: "Vastus medialis", ar: "المتسعة الإنسية", nerve: "femoral",
+    action: "بسط الركبة، والمساعدة في تثبيت الرضفة",
+    clue: "بسط الركبة: رأس الرباعية اللي شكله دمعة فوق الركبة من الداخل" },
+  { id: "sartorius", latin: "Sartorius", ar: "الخياطية", nerve: "femoral",
+    action: "ثني الورك وتبعيده وتدويره للخارج، وثني الركبة",
+    clue: "جلسة الخياط: ثني الورك وتبعيده وتدويره للخارج + ثني الركبة" },
+  { id: "adductor", latin: "Adductor longus", ar: "المقرّبة الطويلة", nerve: "obturator",
+    action: "تقريب الفخذ (Hip adduction)",
+    clue: "ضم الفخذين لبعض (Hip adduction)" },
+  { id: "tibialisAnt", latin: "Tibialis anterior", ar: "الظنبوبية الأمامية", nerve: "deepFibular",
+    action: "رفع القدم لأعلى وقلبها للداخل (Dorsiflexion & inversion)",
+    clue: "رفع مقدمة القدم لفوق (Dorsiflexion)، وضعفها يسبب Foot drop" },
+  { id: "gastroc", view: "both", latin: "Gastrocnemius", ar: "عضلة بطن الساق (التوأمية)", nerve: "tibial",
+    action: "ثني القدم للأسفل (Plantarflexion)، والمساعدة في ثني الركبة",
+    clue: "الوقوف على أطراف الأصابع (Plantarflexion)" },
+
+  /* ---- عضلات المنظر الخلفي ---- */
+  { id: "lats", view: "back", latin: "Latissimus dorsi", ar: "الظهرية العريضة", nerve: "thoracodorsal",
+    action: "مدّ الذراع وتقريبه وتدويره للداخل",
+    clue: "سحب الذراع لتحت وللخلف (حركة الـ Pull-up)" },
+  { id: "infraspinatus", view: "back", latin: "Infraspinatus", ar: "تحت الشوكة", nerve: "suprascapular",
+    action: "تدوير الذراع للخارج (Lateral rotation)، وهي من عضلات الـ Rotator cuff",
+    clue: "تدوير الكتف للخارج: من الـ Rotator cuff تحت شوكة لوح الكتف" },
+  { id: "teresMajor", view: "back", latin: "Teres major", ar: "المدوّرة الكبرى", nerve: "lowerSubscapular",
+    action: "تقريب الذراع وتدويره للداخل ومدّه",
+    clue: "تقريب الذراع وتدويره للداخل: مو من الـ Rotator cuff رغم قربها منه" },
+  { id: "triceps", view: "back", latin: "Triceps brachii", ar: "ثلاثية الرؤوس العضدية", nerve: "radial",
+    action: "بسط الكوع (Elbow extension)",
+    clue: "بسط الكوع (Elbow extension)" },
+  { id: "extDig", view: "back", latin: "Extensor digitorum", ar: "باسطة الأصابع", nerve: "pin",
+    action: "بسط الأصابع والرسغ",
+    clue: "فرد الأصابع وبسط الرسغ" },
+  { id: "gluteMax", view: "back", latin: "Gluteus maximus", ar: "الألوية الكبرى", nerve: "inferiorGluteal",
+    action: "مدّ الورك (Hip extension) وتدويره للخارج",
+    clue: "مدّ الورك، مثل القيام من الكرسي أو طلوع الدرج" },
+  { id: "gluteMed", view: "back", latin: "Gluteus medius", ar: "الألوية الوسطى", nerve: "superiorGluteal",
+    action: "تبعيد الورك (Hip abduction)، وتثبيت الحوض وقت المشي",
+    clue: "تبعيد الورك، وضعفها يسبب Trendelenburg sign" },
+  { id: "bicepsFem", view: "back", latin: "Biceps femoris", ar: "ذات الرأسين الفخذية", nerve: "sciatic",
+    action: "ثني الركبة ومدّ الورك، وتدوير الساق للخارج",
+    clue: "ثني الركبة ومدّ الورك: الـ Hamstring الوحشية" },
+  { id: "semitend", view: "back", latin: "Semitendinosus", ar: "نصف الوترية", nerve: "sciatic",
+    action: "ثني الركبة ومدّ الورك، وتدوير الساق للداخل",
+    clue: "ثني الركبة ومدّ الورك: الـ Hamstring الإنسية" },
+  { id: "soleus", view: "back", latin: "Soleus", ar: "النعلية", nerve: "tibial",
+    action: "ثني القدم للأسفل (Plantarflexion)، خصوصًا والركبة مثنية",
+    clue: "Plantarflexion والركبة مثنية، وهي تحت عضلة بطن الساق" }
+];
+
+// أي عضلة ما لها view نعتبرها من الأمام
+MUSCLES.forEach(m => { if (!m.view) m.view = "front"; });
+
+const QUESTIONS_PER_ROUND = 10;
+
+/* =========================================================
+   ٢) تجهيز الرسمة: ننسخ النصف ونعكسه عشان يطلع الجسم كامل
+   ========================================================= */
+/* اتجاه ألياف كل عضلة بالدرجات (90 = عمودي، 0 = أفقي) */
+const FIBER_ANGLE = {
+  scm: 67, trapezius: -28, deltoid: 95, pec: 30, serratus: -25, oblique: 45,
+  rectusAbd: 90, biceps: 88, brachiorad: 95, adductor: 100, vastusLat: 81,
+  rectusFem: 89, vastusMed: 115, sartorius: 62, tibialisAnt: 88, gastroc: 92,
+  lats: 64, infraspinatus: 41, teresMajor: 28, triceps: 90, extDig: 98,
+  gluteMax: -45, gluteMed: -46, bicepsFem: 92, semitend: 88, soleus: 90
+};
+
+const SVG_NS = "http://www.w3.org/2000/svg";
+const defs = document.getElementById("defs");
+const halves = [document.getElementById("half"), document.getElementById("halfBack")];
+
+// لكل عضلة: نسوي نقش خطوط بزاويتها، ونحط فوقها طبقتين (ألياف + تظليل)
+halves.forEach(half => half.querySelectorAll(".m").forEach(el => {
+  const id = el.dataset.m;
+
+  if (!document.getElementById("fib-" + id)) {
+  const pattern = document.createElementNS(SVG_NS, "pattern");
+  pattern.id = "fib-" + id;
+  pattern.setAttribute("width", "4");
+  pattern.setAttribute("height", "2.6");
+  pattern.setAttribute("patternUnits", "userSpaceOnUse");
+  pattern.setAttribute("patternTransform", `rotate(${FIBER_ANGLE[id] || 90})`);
+  pattern.innerHTML = '<line class="fiber-line" x1="0" y1="1.3" x2="4" y2="1.3"/>';
+  defs.appendChild(pattern);
+  }
+
+  const tex = el.cloneNode();
+  tex.setAttribute("class", "tex");
+  tex.removeAttribute("data-m");
+  tex.dataset.of = id;
+  tex.setAttribute("fill", `url(#fib-${id})`);
+
+  const gloss = el.cloneNode();
+  gloss.setAttribute("class", "gloss");
+  gloss.removeAttribute("data-m");
+  gloss.dataset.of = id;
+  gloss.setAttribute("fill", "url(#gloss)");
+
+  el.after(tex, gloss);
+}));
+
+// ننسخ كل نصف ونعكسه
+halves.forEach(half => {
+  const mirror = half.cloneNode(true);
+  mirror.removeAttribute("id");
+  mirror.setAttribute("transform", "translate(400 0) scale(-1 1)");
+  half.after(mirror);
+});
+
+// يرجّع كل الأشكال (اليمين واليسار) لعضلة معيّنة
+const shapesOf = id => document.querySelectorAll(`.m[data-m="${id}"]`);
+const findMuscle = id => MUSCLES.find(m => m.id === id);
+
+// نخلي العضلات قابلة للوصول بالكيبورد (النسخة الأصلية فقط)
+halves.forEach(half => half.querySelectorAll(".m").forEach(el => {
+  el.setAttribute("tabindex", "0");
+  el.setAttribute("role", "button");
+  el.setAttribute("aria-label", findMuscle(el.dataset.m).latin);
+}));
+
+/* =========================================================
+   ٣) حالة اللعبة
+   ========================================================= */
+const state = { mode: "name", queue: [], index: 0, score: 0, streak: 0, locked: false };
+
+const $ = id => document.getElementById(id);
+
+function loadBest() {
+  try { return Number(localStorage.getItem("muscle-best-" + state.mode)) || 0; } catch { return 0; }
+}
+function saveBest(value) {
+  try { localStorage.setItem("muscle-best-" + state.mode, value); } catch {}
+}
+
+// خلط عشوائي (Fisher–Yates)
+function shuffle(list) {
+  const a = [...list];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function clearColors() {
+  document.querySelectorAll(".m").forEach(el => el.classList.remove("ok", "bad", "reveal", "sel"));
+}
+
+/* =========================================================
+   ٤) بدء الجولة وعرض السؤال
+   ========================================================= */
+function startRound() {
+  state.queue = shuffle(MUSCLES).slice(0, QUESTIONS_PER_ROUND);
+  state.index = 0;
+  state.score = 0;
+  state.streak = 0;
+  showQuestion();
+}
+
+function showQuestion() {
+  clearColors();
+  state.locked = false;
+  $("result").hidden = true;
+  $("result").className = "result";
+
+  const exploring = state.mode === "explore";
+  $("meta").hidden = exploring;
+  document.querySelector(".bar").hidden = exploring;
+  $("prompt").classList.remove("latin");
+
+  if (exploring) {
+    $("kicker").textContent = "وضع المذاكرة";
+    $("prompt").textContent = "اضغطي على أي عضلة";
+    $("sub").textContent = "تطلع لك بطاقتها: الاسم، الوظيفة، والعصب.";
+    showHint("اختاري عضلة من المجسّم عشان تشوفين معلوماتها.");
+    return;
+  }
+
+  const target = state.queue[state.index];
+  // إذا العضلة مو في المنظر الحالي، نقلب المجسّم تلقائيًا
+  if (target.view !== "both" && target.view !== currentView) setView(target.view);
+  if (state.mode === "name") {
+    $("kicker").textContent = "وين هذي العضلة؟";
+    $("prompt").textContent = target.latin;
+    $("prompt").classList.add("latin");
+    $("sub").textContent = target.ar;
+  } else if (state.mode === "action") {
+    $("kicker").textContent = "أي عضلة مسؤولة عن…";
+    $("prompt").textContent = target.clue;
+    $("sub").textContent = "";
+  } else {
+    $("kicker").textContent = "اضغطي على عضلة يغذّيها…";
+    $("prompt").textContent = NERVES[target.nerve].ar;
+    $("sub").textContent = NERVES[target.nerve].en;
+  }
+  showHint("اضغطي على العضلة في المجسّم.");
+  updateStats();
+}
+
+function updateStats() {
+  const best = loadBest();
+  $("progress").textContent = `سؤال ${Math.min(state.index + 1, QUESTIONS_PER_ROUND)} من ${QUESTIONS_PER_ROUND}`;
+  $("score").textContent = state.score;
+  $("streak").textContent = state.streak;
+  $("best").textContent = `${best} / ${QUESTIONS_PER_ROUND}`;
+  $("barFill").style.width = (state.index / QUESTIONS_PER_ROUND) * 100 + "%";
+}
+
+/* =========================================================
+   ٥) لما تضغط على عضلة
+   ========================================================= */
+function onMuscleClick(id) {
+  const clicked = findMuscle(id);
+
+  if (state.mode === "explore") {
+    clearColors();
+    shapesOf(id).forEach(el => el.classList.add("sel"));
+    showCard(clicked);
+    return;
+  }
+  if (state.locked) return;
+  state.locked = true;
+
+  const target = state.queue[state.index];
+  // في نمط العصب: أي عضلة يغذيها نفس العصب تعتبر صح
+  const correct = state.mode === "nerve" ? clicked.nerve === target.nerve : clicked.id === target.id;
+
+  if (correct) {
+    state.score++;
+    state.streak++;
+    shapesOf(id).forEach(el => el.classList.add("ok"));
+    $("resultText").textContent = "صح! " + (state.streak >= 3 ? `${state.streak} إجابات صح ورا بعض.` : "");
+    $("result").classList.add("good");
+    showCard(clicked);
+  } else {
+    state.streak = 0;
+    shapesOf(id).forEach(el => el.classList.add("bad"));
+    shapesOf(target.id).forEach(el => el.classList.add("reveal"));
+    $("resultText").textContent = `هذي ${clicked.latin}. الجواب الصحيح ${target.latin}، وهو مظلّل بالأخضر.`;
+    $("result").classList.add("miss");
+    showCard(target);
+  }
+
+  $("nextBtn").textContent = state.index + 1 >= QUESTIONS_PER_ROUND ? "شوفي النتيجة" : "التالي";
+  $("result").hidden = false;
+  updateStats();
+  $("nextBtn").focus({ preventScroll: true });
+}
+
+function next() {
+  // بعد نهاية الجولة: زر "جولة جديدة"
+  if (state.index >= QUESTIONS_PER_ROUND) { startRound(); return; }
+
+  state.index++;
+  if (state.index < QUESTIONS_PER_ROUND) { showQuestion(); return; }
+
+  // نهاية الجولة
+  clearColors();
+  if (state.score > loadBest()) saveBest(state.score);
+  updateStats();
+  $("progress").textContent = "خلصت الجولة";
+  $("kicker").textContent = "نتيجتك";
+  $("prompt").textContent = `${state.score} من ${QUESTIONS_PER_ROUND}`;
+  $("sub").textContent = state.score >= 9 ? "ممتاز! جاهزة للاختبار." : state.score >= 6 ? "حلو، جولة ثانية وتثبتينها." : "جربي وضع التصفّح شوي، وبعدين ارجعي.";
+  $("resultText").textContent = "";
+  $("result").className = "result";
+  $("nextBtn").textContent = "جولة جديدة";
+  $("result").hidden = false;
+}
+
+/* =========================================================
+   ٦) بطاقة المعلومات
+   ========================================================= */
+function showCard(m) {
+  const n = NERVES[m.nerve];
+  $("info").innerHTML = `
+    <h3>${m.latin}</h3>
+    <p class="ar">${m.ar}</p>
+    <dl>
+      <div><dt>الوظيفة</dt><dd>${m.action}</dd></div>
+      <div><dt>العصب</dt><dd>${n.ar}<br><span class="en">${n.en}</span></dd></div>
+    </dl>`;
+}
+function showHint(text) {
+  $("info").innerHTML = `<p class="hint">${text}</p>`;
+}
+
+/* =========================================================
+   ٧) ربط الأحداث (الضغط، المرور، الكيبورد، الأزرار)
+   ========================================================= */
+const svg = $("body");
+svg.addEventListener("click", e => {
+  const el = e.target.closest(".m");
+  if (el) onMuscleClick(el.dataset.m);
+});
+svg.addEventListener("keydown", e => {
+  const el = e.target.closest(".m");
+  if (el && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); onMuscleClick(el.dataset.m); }
+});
+// تظليل الجهتين مع بعض عند المرور
+svg.addEventListener("pointerover", e => {
+  const el = e.target.closest(".m");
+  if (el) shapesOf(el.dataset.m).forEach(s => s.classList.add("hov"));
+});
+svg.addEventListener("pointerout", e => {
+  const el = e.target.closest(".m");
+  if (el) shapesOf(el.dataset.m).forEach(s => s.classList.remove("hov"));
+});
+
+$("nextBtn").addEventListener("click", next);
+
+document.querySelectorAll(".modes button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".modes button").forEach(b => b.setAttribute("aria-pressed", b === btn));
+    state.mode = btn.dataset.mode;
+    startRound();
+  });
+});
+
+/* =========================================================
+   ٨) جسم أنثى / جسم ذكر
+   الفرق: شكل الجسم الخارجي، الشعر، وأماكن بعض العضلات
+   ========================================================= */
+const BODIES = {
+  female: {
+    outline: "M201,108 L183,112 L181,145 C162,155 134,153 118,166 C102,175 98,195 100,215 L94,320 L82,450 C76,470 78,505 92,512 C102,515 108,500 106,470 L114,450 L128,330 L136,230 L141,232 C144,280 156,330 156,362 C156,395 132,420 128,455 C126,500 138,580 148,640 L154,700 C156,740 160,770 162,790 L152,812 L192,812 L188,790 C192,740 196,700 192,660 L194,640 L201,475 Z",
+    hair: "M166,72 C162,34 180,24 200,24 C220,24 238,34 234,72 C229,52 216,42 200,42 C184,42 171,52 166,72 Z",
+    bun: true,
+    hairBack: "M166,72 C162,30 182,24 200,24 C218,24 238,30 234,72 C236,95 226,110 200,112 C174,110 164,95 166,72 Z",
+    back: {
+      lats:          { d: "M201,282 L201,395 C186,398 166,402 154,398 C153,370 151,330 147,292 C145,266 142,248 138,240 C150,252 166,262 180,268 C190,272 196,277 201,282 Z" },
+      infraspinatus: { transform: "translate(4 0)" },
+      teresMajor:    { transform: "translate(4 0)" },
+      triceps:       { transform: "translate(6 0)" },
+      deltoid:       { transform: "translate(6 0)" },
+      extDig:        { transform: "translate(6 0)" }
+    },
+    front: {
+      trapezius:  { d: "M181,128 C166,145 142,151 122,163 L129,169 C150,161 168,158 183,151 Z" },
+      oblique:    { d: "M150,298 L161,291 L172,302 C175,332 175,362 173,396 C166,412 150,424 136,436 C142,415 152,392 156,366 C156,345 152,320 150,298 Z" },
+      serratus:   { transform: "translate(5 0)" },
+      biceps:     { transform: "translate(6 0)" },
+      deltoid:    { transform: "translate(6 0)" },
+      brachiorad: { transform: "translate(6 0)" }
+    }
+  },
+  male: {
+    // أكتاف أعرض، خصر أعرض، ورك أضيق
+    outline: "M201,108 L182,112 L180,145 C160,155 130,152 112,165 C96,175 92,195 94,215 L88,320 L76,450 C70,470 72,505 86,512 C96,515 102,500 100,470 L108,450 L122,330 L130,230 L136,232 C140,290 150,340 148,370 C146,400 136,420 134,450 L148,640 L154,700 C156,740 160,770 162,790 L150,812 L192,812 L188,790 C192,740 196,700 192,660 L194,640 L201,475 Z",
+    hair: "M168,58 C166,32 182,22 200,22 C218,22 234,32 232,58 C226,44 214,37 200,37 C186,37 174,44 168,58 Z",
+    bun: false,
+    hairBack: "M168,70 C164,32 182,22 200,22 C218,22 236,32 232,70 C232,84 222,92 200,94 C178,92 168,84 168,70 Z",
+    back: {
+      lats:          { d: "M201,282 L201,395 C186,398 166,402 152,398 C150,370 146,330 142,292 C140,266 137,248 133,240 C148,252 165,262 180,268 C190,272 196,277 201,282 Z" },
+      infraspinatus: { transform: "" },
+      teresMajor:    { transform: "" },
+      triceps:       { transform: "" },
+      deltoid:       { transform: "" },
+      extDig:        { transform: "" }
+    },
+    front: {
+      trapezius:  { d: "M181,128 C166,145 140,151 116,162 L124,169 C146,161 168,158 183,151 Z" },
+      oblique:    { d: "M145,296 L158,289 L170,300 C173,330 174,362 172,396 C164,411 150,421 140,430 C143,410 148,388 148,366 C148,340 146,316 145,296 Z" },
+      serratus:   { transform: "" },
+      biceps:     { transform: "" },
+      deltoid:    { transform: "" },
+      brachiorad: { transform: "" }
+    }
+  }
+};
+
+function setBody(kind) {
+  const body = BODIES[kind];
+  document.querySelectorAll(".outline").forEach(el => el.setAttribute("d", body.outline));
+  $("hairCap").setAttribute("d", body.hair);
+  $("hairBack").setAttribute("d", body.hairBack);
+  document.querySelectorAll(".bun").forEach(el => el.style.display = body.bun ? "" : "none");
+
+  for (const view of ["front", "back"]) {
+    const group = document.querySelector(`.view[data-view="${view}"]`);
+    for (const [id, change] of Object.entries(body[view])) {
+      // العضلة نفسها + طبقات الألياف والتظليل حقتها
+      group.querySelectorAll(`[data-m="${id}"], [data-of="${id}"]`).forEach(el => {
+        if (change.d) el.setAttribute("d", change.d);
+        if ("transform" in change) {
+          if (change.transform) el.setAttribute("transform", change.transform);
+          else el.removeAttribute("transform");
+        }
+      });
+    }
+  }
+  document.querySelectorAll(".sex button[data-body]").forEach(b => b.setAttribute("aria-pressed", b.dataset.body === kind));
+  try { localStorage.setItem("muscle-body", kind); } catch {}
+}
+
+document.querySelectorAll(".sex button[data-body]").forEach(btn => {
+  btn.addEventListener("click", () => setBody(btn.dataset.body));
+});
+
+/* =========================================================
+   ٩) المنظر: من الأمام / من الخلف
+   ========================================================= */
+let currentView = "front";
+function setView(view) {
+  currentView = view;
+  document.querySelectorAll(".view").forEach(g => g.style.display = g.dataset.view === view ? "" : "none");
+  document.querySelectorAll(".sex button[data-view]").forEach(b => b.setAttribute("aria-pressed", b.dataset.view === view));
+  $("caption").textContent = view === "front"
+    ? "منظر أمامي: يمين الجسم يظهر على يسار الشاشة"
+    : "منظر خلفي: يسار الجسم يظهر على يسار الشاشة";
+}
+document.querySelectorAll(".sex button[data-view]").forEach(btn => {
+  btn.addEventListener("click", () => setView(btn.dataset.view));
+});
+
+let savedBody = "female";
+try { savedBody = localStorage.getItem("muscle-body") || "female"; } catch {}
+setBody(BODIES[savedBody] ? savedBody : "female");
+
+startRound();
+</script>
+</body>
+</html>
